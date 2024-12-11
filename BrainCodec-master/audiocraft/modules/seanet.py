@@ -523,9 +523,21 @@ class SEANetfMRIEncoder(nn.Module):
         assert noise_type in ["gaussian", "uniform"]
         self.bidiractional = bidiractional
 
-    def forward(self, x, tr):
+    def forward(self, x, tr= None):
+
+
+        if tr is None : 
+            print('in the contruction encoder!!! ohhhhhhhhh my god !! i will add this for a while but pay attention, you have to change it later ( go to encodec to do it ) : ')
+            tr=torch.zeros(x.shape[0],x.shape[2])
+            tr = tr.float()
+            tr=tr.to(x.device)
+        
+        
+        
+        
         if tr is not None:
             tr = self.emb_linear(tr)
+            print( f'from the source it says that x shape is {x.shape} and tr.transpose(1, 2) shape is {tr.transpose(1, 2).shape}')
             return self.model(x + tr.transpose(1, 2))
         else:
             return self.model(x)

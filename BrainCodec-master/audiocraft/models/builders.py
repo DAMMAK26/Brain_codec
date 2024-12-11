@@ -44,6 +44,7 @@ def get_quantizer(quantizer: str, cfg: omegaconf.DictConfig, dimension: int) -> 
     kwargs = dict_from_config(getattr(cfg, quantizer))
     if quantizer != "no_quant":
         kwargs["dimension"] = dimension
+    
     return klass(**kwargs)
 
 
@@ -78,7 +79,6 @@ def get_encodec_autoencoder(encoder_name: str, cfg: omegaconf.DictConfig):
     else:
         raise KeyError(f"Unexpected compression model {cfg.compression_model}")
 
-
 def get_compression_model(cfg: omegaconf.DictConfig) -> CompressionModel:
     """Instantiate a compression model."""
     if cfg.compression_model == "encodec":
@@ -105,6 +105,7 @@ def get_compression_model(cfg: omegaconf.DictConfig) -> CompressionModel:
         quantizer_name = kwargs.pop("quantizer")
         encoder, decoder = get_encodec_autoencoder(encoder_name, cfg)
         quantizer = get_quantizer(quantizer_name, cfg, encoder.dimension)
+        
         return EncodecfMRIModel(encoder, decoder, quantizer, **kwargs).to(cfg.device)
     else:
         raise KeyError(f"Unexpected compression model {cfg.compression_model}")
@@ -407,5 +408,5 @@ def get_debug_lm_model(device="cpu"):
 
 
 def get_wrapped_compression_model(compression_model: CompressionModel, cfg: omegaconf.DictConfig) -> CompressionModel:
-    # more to come.
+    # more to come.    
     return compression_model

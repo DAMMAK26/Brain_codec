@@ -12,7 +12,7 @@ import os
 import socket
 import typing as tp
 from enum import Enum
-
+import platform
 import omegaconf
 
 
@@ -25,7 +25,32 @@ class ClusterType(Enum):
 
 
 def _guess_cluster_type() -> ClusterType:
-    uname = os.uname()
+    fqdn = socket.getfqdn()
+
+    # Use platform.system() for cross-platform compatibility
+    sysname = platform.system()
+
+    if sysname == "Linux":
+        uname = platform.uname()
+        if uname.release.endswith("-aws") or ".ec2" in fqdn:
+            return ClusterType.AWS
+
+    if fqdn.endswith(".fair"):
+        return ClusterType.FAIR
+
+    if fqdn.endswith(".facebook.com"):
+        return ClusterType.RSC
+
+    if sysname == "Darwin":  # macOS
+        return ClusterType.LOCAL_DARWIN
+
+    if sysname == "Windows":  # Handle Windows specifically
+        # You can add Windows-specific cluster detection logic here if needed
+        return ClusterType.DEFAULT
+
+    return ClusterType.DEFAULT
+
+    """uname = os.uname()
     fqdn = socket.getfqdn()
     if uname.sysname == "Linux" and (uname.release.endswith("-aws") or ".ec2" in fqdn):
         return ClusterType.AWS
@@ -39,7 +64,7 @@ def _guess_cluster_type() -> ClusterType:
     if uname.sysname == "Darwin":
         return ClusterType.LOCAL_DARWIN
 
-    return ClusterType.DEFAULT
+    return ClusterType.DEFAULT"""
 
 
 def get_cluster_type(

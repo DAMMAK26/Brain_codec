@@ -21,6 +21,9 @@ from ..utils.utils import get_pool_executor
 from . import builders
 from .compression import CompressionSolver
 
+
+import pdb
+
 logger = logging.getLogger(__name__)
 
 
@@ -217,6 +220,7 @@ class CompressionfMRISolver(CompressionSolver):
 
         flashy.distrib.barrier()
 
+    
     @staticmethod
     def model_from_checkpoint(
         checkpoint_path: tp.Union[Path, str],
@@ -235,15 +239,25 @@ class CompressionfMRISolver(CompressionSolver):
         checkpoint_path = str(checkpoint_path)
         if checkpoint_path.startswith("//pretrained/"):
             name = checkpoint_path.split("/", 3)[-1]
+            
             return models.CompressionModel.get_pretrained(name, device)
+
+       
         logger = logging.getLogger(__name__)
         logger.info(f"Loading compression model from checkpoint: {checkpoint_path}")
+        
         _checkpoint_path = checkpoint.resolve_checkpoint_path(checkpoint_path, use_fsdp=False)
+        
         assert _checkpoint_path is not None, f"Could not resolve compression model checkpoint path: {checkpoint_path}"
         state = checkpoint.load_checkpoint(_checkpoint_path)
         assert state is not None and "xp.cfg" in state, f"Could not load compression model from ckpt: {checkpoint_path}"
+        
+        
         cfg = state["xp.cfg"]
+        """for key, value in cfg.items():
+            print( f'cfg[{key}] = {value}')"""
         cfg.device = device
+        
         compression_model = models.builders.get_compression_model(cfg).to(device)
         assert (
             compression_model.space_dim == cfg.space_dim

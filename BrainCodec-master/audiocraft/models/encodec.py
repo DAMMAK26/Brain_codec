@@ -293,6 +293,8 @@ class EncodecfMRIModel(CompressionModel):
         # embedding
         self.tr_emb_dim = encoder.tr_emb_dim
         self.tr_emb_pad_id = encoder.tr_emb_pad_id
+        print ( "go to encodec.py and delet this ")
+        print( "the tr_emb_pad_id is ", self.tr_emb_pad_id+ 1 , "the tr_emb_dim is ", self.tr_emb_dim)
         self.tr_embedding = nn.Embedding(self.tr_emb_pad_id + 1, self.tr_emb_dim, padding_idx=self.tr_emb_pad_id)
         self.space_dim = space_dim
         self.frame_rate = frame_rate
@@ -336,19 +338,31 @@ class EncodecfMRIModel(CompressionModel):
     def forward(
         self,
         x: torch.Tensor,
-        tr: torch.Tensor,
+        tr: torch.Tensor = None,
         noise_disable: bool = False,
     ) -> qt.QuantizedResult:
+        print('the x dim is ', x.shape)
         assert x.dim() == 3
         length = x.shape[-1]
-
+        print(' go to codec and delete this ')
+        print("the without tr is ", self.without_tr)
+        
+        if tr is None : 
+            print(' ohhhhhhhhh my god !! i will add this for a while but pay attention, you have to change it later ( go to encodec to do it ) : ')
+            tr=torch.zeros(x.shape[0],x.shape[2])
+            tr = tr.long()
+            tr=tr.to(x.device)
         if self.without_tr:
             tr = None
         else:
             tr = self.tr_embedding(tr)
-
+        print( f' the shape of x is {x.shape} and the shape of tr is {tr.shape}')
+        
         emb = self.encoder(x, tr)
+        print( ' self.add_noise= ', self.add_nosie)
+        
         if self.add_nosie:
+             #  oooooh there is sth here !! you have to explore more the divisionnssssssssssssssssssssssssssssssss
             mu, logvar = torch.split(emb, [self.dimension, self.dimension], dim=1)
             if self.lstm_for_noise is not None:
                 stats = torch.cat([mu, logvar], dim=1)
@@ -364,6 +378,7 @@ class EncodecfMRIModel(CompressionModel):
             mu = logvar = None
             q_res = self.quantizer(emb, self.frame_rate)
             out = self.decoder(q_res.x, tr, mu, logvar)
+                
 
         # remove extra padding added by the encoder and decoder
         assert out.shape[-1] >= length, (out.shape[-1], length)
